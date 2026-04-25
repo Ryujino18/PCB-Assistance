@@ -6,4 +6,4 @@ pymupdf
 numpy
 pydantic
 python-dotenv
-sentence-transformers
+aiofiles

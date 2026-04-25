@@ -1,19 +1,12 @@
-# Use Python 3.11 as the base
-FROM python:3.11
+FROM python:3.11-slim
 
-# Set the working directory inside the container
 WORKDIR /app
 
-# Copy the requirements file first to speed up building
 COPY Backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy all your project files into the container
 COPY . .
 
-# Hugging Face uses port 7860 by default
-EXPOSE 7860
+EXPOSE 10000
 
-# Start the Python backend using uvicorn
-# We point to Backend.app:app because app.py is inside the Backend folder
-CMD ["uvicorn", "Backend.app:app", "--host", "0.0.0.0", "--port", "7860"]
+CMD ["uvicorn", "Backend.app:app", "--host", "0.0.0.0", "--port", "10000"]

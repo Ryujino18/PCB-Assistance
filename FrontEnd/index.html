@@ -569,7 +569,7 @@ async function simulateAIResponse(userQuery) {
   document.getElementById('chatWrap').scrollTop = document.getElementById('chatWrap').scrollHeight;
 
   try {
-    const response = await fetch('http://127.0.0.1:8000/chat', {
+    const response = await fetch('/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text: userQuery })
