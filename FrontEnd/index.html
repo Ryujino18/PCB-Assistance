@@ -566,7 +566,7 @@ async function simulateAIResponse(userQuery) {
 
   try {
     // Send the message to your local Python server
-    const response = await fetch('http://localhost:8000/chat', {
+    const response = await fetch('/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text: userQuery })
