@@ -32,26 +32,57 @@ FRONTEND_DIR = os.path.join(BASE_DIR, "..", "FrontEnd")
 
 GDRIVE_FILE_ID = "1PVNpBEhBbHxSEvgRlyLmMlc0u_zUEqnr"
 
-# ── Download PDF from Google Drive if not present ──
+# ── Download PDF from Google Drive (handles large file confirmation) ──
 def download_pdf():
-    if os.path.exists(PDF_FILE):
-        print("PDF already exists, skipping download.")
-        return
+    if os.path.exists(PDF_FILE) and os.path.getsize(PDF_FILE) > 1000000:
+        print(f"PDF already exists ({os.path.getsize(PDF_FILE)} bytes), skipping download.")
+        return True
+
     print("Downloading PDF from Google Drive...")
-    url = f"https://drive.google.com/uc?export=download&id={GDRIVE_FILE_ID}"
     session = requests.Session()
+
+    # Step 1: Get the confirmation token for large files
+    url = f"https://drive.google.com/uc?export=download&id={GDRIVE_FILE_ID}"
     response = session.get(url, stream=True)
-    # Handle large file warning page
+
+    # Find confirmation token
+    confirm_token = None
     for key, value in response.cookies.items():
         if key.startswith("download_warning"):
-            url = f"https://drive.google.com/uc?export=download&id={GDRIVE_FILE_ID}&confirm={value}"
-            response = session.get(url, stream=True)
+            confirm_token = value
             break
+
+    # Also check in response content for newer Google Drive format
+    if not confirm_token:
+        import re
+        content = response.text[:5000]
+        match = re.search(r'confirm=([0-9A-Za-z_]+)', content)
+        if match:
+            confirm_token = match.group(1)
+
+    # Step 2: Download with confirmation
+    if confirm_token:
+        url = f"https://drive.google.com/uc?export=download&id={GDRIVE_FILE_ID}&confirm={confirm_token}"
+        response = session.get(url, stream=True)
+
+    # Step 3: Save file
+    total = 0
     with open(PDF_FILE, "wb") as f:
-        for chunk in response.iter_content(chunk_size=32768):
+        for chunk in response.iter_content(chunk_size=65536):
             if chunk:
                 f.write(chunk)
-    print(f"PDF downloaded successfully!")
+                total += len(chunk)
+
+    size = os.path.getsize(PDF_FILE)
+    print(f"Downloaded {size} bytes.")
+
+    if size < 1000000:
+        print("ERROR: Downloaded file is too small — Google Drive may have blocked it!")
+        os.remove(PDF_FILE)
+        return False
+
+    print("PDF downloaded successfully!")
+    return True
 
 # ── Extract text from PDF with overlapping chunks ──
 def extract_chunks(pdf_path, chunk_size=200, overlap=50):
@@ -66,10 +97,7 @@ def extract_chunks(pdf_path, chunk_size=200, overlap=50):
         while i < len(words):
             chunk = " ".join(words[i:i+chunk_size])
             if chunk:
-                chunks.append({
-                    "text": chunk,
-                    "page": page_num + 1
-                })
+                chunks.append({"text": chunk, "page": page_num + 1})
             i += chunk_size - overlap
     return chunks
 
@@ -160,12 +188,22 @@ def ask(query, context_chunks):
 
 # ── Startup ──
 print("Initializing...")
-download_pdf()
+pdf_ok = download_pdf()
 
-if os.path.exists(CHUNKS_FILE):
+if not pdf_ok:
+    print("FATAL: Could not download PDF. Answers will not work.")
+    chunks = []
+elif os.path.exists(CHUNKS_FILE):
     print("Saved chunks found! Loading...")
     with open(CHUNKS_FILE, "r") as f:
         chunks = json.load(f)
+    # Validate format
+    if chunks and isinstance(chunks[0], str):
+        print("Old format detected, rebuilding chunks...")
+        os.remove(CHUNKS_FILE)
+        chunks = extract_chunks(PDF_FILE)
+        with open(CHUNKS_FILE, "w") as f:
+            json.dump(chunks, f)
 else:
     print("No chunks found. Reading PDF...")
     chunks = extract_chunks(PDF_FILE)
@@ -173,9 +211,13 @@ else:
         json.dump(chunks, f)
     print(f"Saved {len(chunks)} chunks!")
 
-print(f"Building BM25 index over {len(chunks)} chunks...")
-bm25 = BM25(chunks)
-print("Ready!")
+if chunks:
+    print(f"Building BM25 index over {len(chunks)} chunks...")
+    bm25 = BM25(chunks)
+    print("Ready!")
+else:
+    bm25 = None
+    print("WARNING: No chunks loaded. Check PDF download.")
 
 # ── Serve frontend ──
 app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
@@ -190,6 +232,8 @@ class Query(BaseModel):
 
 @app.post("/chat")
 async def chat(query: Query):
+    if not bm25:
+        return {"answer": "System is still initializing or PDF failed to load. Please try again in a moment."}
     results = bm25.search(query.text, top_k=10)
     answer = ask(query.text, results)
     return {"answer": answer}
