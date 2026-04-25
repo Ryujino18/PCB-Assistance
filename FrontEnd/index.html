@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PCB Assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#0c0d0f;
+  --surface:#111316;
+  --surface2:#181b1f;
+  --surface3:#1e2126;
+  --border:#ffffff0f;
+  --border2:#ffffff18;
+  --gold:#d4a843;
+  --gold2:#f0c060;
+  --gold-dim:#d4a84330;
+  --text:#ffffff;
+  --text2:#d4cfc8;
+  --text3:#5a554e;
+  --accent:#d4a843;
+  --radius:14px;
+  --font-display:'Montserrat',sans-serif;
+  --font-body:'Montserrat',sans-serif;
+  --font-mono:'DM Mono',monospace;
+}
+
+html,body{height:100%;overflow:hidden;background:var(--bg)}
+
+body{
+  font-family:var(--font-body);
+  color:var(--text);
+  display:flex;
+  flex-direction:column;
+  height:100vh;
+}
+
+/* PCB circuit line background */
+body::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  background-image:
+    linear-gradient(var(--border) 1px,transparent 1px),
+    linear-gradient(90deg,var(--border) 1px,transparent 1px);
+  background-size:48px 48px;
+  mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black 20%,transparent 100%);
+  pointer-events:none;
+  z-index:0;
+}
+
+/* HEADER */
+.header{
+  position:relative;
+  z-index:10;
+  display:flex;
+  align-items:center;
+  gap:16px;
+  padding:18px 28px;
+  border-bottom:1px solid var(--border2);
+  background:linear-gradient(180deg,#13151800 0%,#131518cc 100%);
+  backdrop-filter:blur(20px);
+  flex-shrink:0;
+}
+
+.logo-mark{
+  width:40px;height:40px;flex-shrink:0;
+  position:relative;
+}
+
+.logo-mark svg{width:40px;height:40px}
+
+.header-info{flex:1}
+
+.header-title{
+  font-family:"Montserrat",sans-serif;
+  font-size:20px;
+  font-weight:700;
+  letter-spacing:0.06em;
+  color:var(--text);
+  line-height:1;
+}
+
+.header-title span{color:var(--gold)}
+
+.header-sub{
+  font-size:10.5px;
+  font-weight:400;
+  color:var(--text3);
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  margin-top:4px;
+}
+
+.header-badge{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:7px 14px;
+  border:1px solid var(--border2);
+  border-radius:40px;
+  background:var(--surface2);
+}
+
+.badge-dot{
+  width:6px;height:6px;
+  border-radius:50%;
+  background:var(--gold);
+  animation:glow-pulse 2.5s ease-in-out infinite;
+}
+
+@keyframes glow-pulse{
+  0%,100%{box-shadow:0 0 0 0 #d4a84350}
+  50%{box-shadow:0 0 0 4px #d4a84310}
+}
+
+.badge-text{
+  font-size:10.5px;
+  font-weight:500;
+  color:var(--text2);
+  font-family:"Montserrat",sans-serif;
+  letter-spacing:0.04em;
+}
+
+/* CHAT AREA */
+.chat-wrap{
+  position:relative;
+  z-index:5;
+  flex:1;
+  overflow-y:auto;
+  padding:32px 0;
+  scroll-behavior:smooth;
+}
+
+.chat-wrap::-webkit-scrollbar{width:3px}
+.chat-wrap::-webkit-scrollbar-track{background:transparent}
+.chat-wrap::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+.chat-inner{
+  max-width:740px;
+  margin:0 auto;
+  padding:0 28px;
+  display:flex;
+  flex-direction:column;
+  gap:28px;
+}
+
+/* WELCOME */
+.welcome{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  text-align:center;
+  padding:48px 0 24px;
+  animation:fade-up .6s ease both;
+}
+
+@keyframes fade-up{
+  from{opacity:0;transform:translateY(16px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+.welcome-icon{
+  width:72px;height:72px;
+  margin-bottom:24px;
+  opacity:.9;
+}
+
+.welcome-title{
+  font-family:var(--font-display);
+  font-size:42px;
+  font-weight:800;
+  letter-spacing:0.02em;
+  color:var(--text);
+  line-height:1.1;
+  margin-bottom:12px;
+}
+
+.welcome-title em{
+  font-style:italic;
+  color:var(--gold);
+}
+
+.welcome-desc{
+  font-size:13.5px;
+  font-weight:400;
+  color:var(--text2);
+  line-height:1.7;
+  max-width:440px;
+  margin-bottom:36px;
+}
+
+.suggestions-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  width:100%;
+  max-width:520px;
+}
+
+.suggestion-card{
+  display:flex;
+  align-items:flex-start;
+  gap:12px;
+  padding:14px 16px;
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  cursor:pointer;
+  transition:border-color .2s,background .2s,transform .15s;
+  text-align:left;
+}
+
+.suggestion-card:hover{
+  border-color:var(--border2);
+  background:var(--surface3);
+  transform:translateY(-1px);
+}
+
+.scard-icon{
+  width:28px;height:28px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  margin-top:1px;
+  opacity:.7;
+}
+
+.scard-icon svg{width:16px;height:16px;stroke:var(--gold);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+
+.scard-text{
+  font-size:12.5px;
+  font-weight:500;
+  color:var(--text2);
+  line-height:1.5;
+}
+
+/* MESSAGES */
+.msg{
+  display:flex;
+  gap:16px;
+  animation:fade-up .3s ease both;
+}
+
+.msg.user{flex-direction:row-reverse}
+
+.msg-avatar{
+  width:34px;height:34px;flex-shrink:0;
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  margin-top:2px;
+  border:1px solid var(--border2);
+}
+
+.msg.user .msg-avatar{
+  background:linear-gradient(135deg,#1e1a14,#2a2318);
+}
+
+.msg.ai .msg-avatar{
+  background:linear-gradient(135deg,#141210,#1e1a14);
+}
+
+.msg-avatar svg{width:16px;height:16px;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+
+.msg.user .msg-avatar svg{stroke:#d4a843}
+.msg.ai .msg-avatar svg{stroke:#8a9aaa}
+
+.msg-bubble{
+  max-width:600px;
+  padding:16px 20px;
+  border-radius:16px;
+  font-size:14px;
+  line-height:1.75;
+  font-weight:400;
+}
+
+.msg.user .msg-bubble{
+  background:var(--surface3);
+  border:1px solid var(--border2);
+  border-top-right-radius:4px;
+  color:var(--text);
+}
+
+.msg.ai .msg-bubble{
+  background:transparent;
+  color:var(--text);
+  padding:4px 0;
+  border-radius:0;
+}
+
+.msg.ai .msg-bubble strong{
+  font-family:"Montserrat",sans-serif;
+  font-weight:700;
+  font-size:13px;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+  color:var(--gold2);
+  display:block;
+  margin-bottom:4px;
+  margin-top:12px;
+}
+
+.msg.ai .msg-bubble strong:first-child{margin-top:0}
+
+/* INPUT */
+.input-area{
+  position:relative;
+  z-index:10;
+  padding:16px 28px 24px;
+  border-top:1px solid var(--border);
+  background:linear-gradient(0deg,var(--bg) 60%,transparent 100%);
+  backdrop-filter:blur(20px);
+  flex-shrink:0;
+}
+
+.input-shell{
+  max-width:740px;
+  margin:0 auto;
+  position:relative;
+}
+
+.input-box{
+  display:flex;
+  align-items:flex-end;
+  gap:12px;
+  background:var(--surface2);
+  border:1px solid var(--border2);
+  border-radius:18px;
+  padding:14px 14px 14px 20px;
+  transition:border-color .25s,box-shadow .25s;
+}
+
+.input-box:focus-within{
+  border-color:#d4a84340;
+  box-shadow:0 0 0 3px #d4a84308,0 8px 32px #00000030;
+}
+
+textarea{
+  flex:1;
+  background:none;
+  border:none;
+  outline:none;
+  color:var(--text);
+  font-family:var(--font-body);
+  font-size:14.5px;
+  font-weight:400;
+  line-height:1.6;
+  resize:none;
+  max-height:160px;
+  padding:3px 0;
+}
+
+textarea::placeholder{
+  color:var(--text3);
+  font-style:italic;
+}
+
+.send-btn{
+  width:38px;height:38px;
+  background:linear-gradient(135deg,#d4a843,#a8854a);
+  border:none;
+  border-radius:12px;
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+  transition:transform .15s,opacity .2s,box-shadow .2s;
+  box-shadow:0 2px 12px #d4a84320;
+}
+
+.send-btn:hover{transform:translateY(-1px);box-shadow:0 4px 20px #d4a84330}
+.send-btn:active{transform:translateY(0)}
+.send-btn:disabled{opacity:.3;cursor:not-allowed;transform:none;box-shadow:none}
+
+.send-btn svg{width:15px;height:15px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+.input-footer{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  margin-top:10px;
+  font-size:10px;
+  font-weight:500;
+  color:var(--text2);
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+}
+
+.input-footer svg{width:10px;height:10px;stroke:var(--text3);fill:none;stroke-width:1.5;opacity:.6}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo-mark">
+    <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="6" y="6" width="28" height="28" rx="4" stroke="#d4a843" stroke-width="1.2" fill="none"/>
+      <circle cx="13" cy="13" r="2" fill="#d4a843" opacity=".8"/>
+      <circle cx="27" cy="13" r="2" fill="#d4a843" opacity=".8"/>
+      <circle cx="13" cy="27" r="2" fill="#d4a843" opacity=".8"/>
+      <circle cx="27" cy="27" r="2" fill="#d4a843" opacity=".8"/>
+      <circle cx="20" cy="20" r="3" stroke="#d4a843" stroke-width="1.2" fill="none"/>
+      <line x1="13" y1="13" x2="17" y2="20" stroke="#d4a843" stroke-width="1" opacity=".6"/>
+      <line x1="27" y1="13" x2="23" y2="20" stroke="#d4a843" stroke-width="1" opacity=".6"/>
+      <line x1="13" y1="27" x2="17" y2="20" stroke="#d4a843" stroke-width="1" opacity=".6"/>
+      <line x1="27" y1="27" x2="23" y2="20" stroke="#d4a843" stroke-width="1" opacity=".6"/>
+      <rect x="3" y="12" width="3" height="3" rx="0.5" fill="#d4a843" opacity=".5"/>
+      <rect x="3" y="25" width="3" height="3" rx="0.5" fill="#d4a843" opacity=".5"/>
+      <rect x="34" y="12" width="3" height="3" rx="0.5" fill="#d4a843" opacity=".5"/>
+      <rect x="34" y="25" width="3" height="3" rx="0.5" fill="#d4a843" opacity=".5"/>
+    </svg>
+  </div>
+  <div class="header-info">
+    <div class="header-title">PCB <span style="color:var(--gold);font-weight:800">Assistant</span></div>
+    <div class="header-sub">Sierra Circuits Knowledge Base · 1,343 pages</div>
+  </div>
+  <div class="header-badge">
+    <div class="badge-dot"></div>
+    <span class="badge-text">Knowledge Base Online</span>
+  </div>
+</header>
+
+<div class="chat-wrap" id="chatWrap">
+  <div class="chat-inner" id="chatInner">
+    <div class="welcome" id="welcome">
+      <svg class="welcome-icon" viewBox="0 0 72 72" fill="none">
+        <rect x="10" y="10" width="52" height="52" rx="8" stroke="#d4a843" stroke-width="1" fill="none" opacity=".3"/>
+        <rect x="18" y="18" width="36" height="36" rx="5" stroke="#d4a843" stroke-width="1" fill="none" opacity=".5"/>
+        <rect x="24" y="24" width="10" height="8" rx="2" stroke="#d4a843" stroke-width="1" fill="none"/>
+        <rect x="38" y="24" width="10" height="8" rx="2" stroke="#d4a843" stroke-width="1" fill="none"/>
+        <rect x="24" y="40" width="24" height="8" rx="2" stroke="#d4a843" stroke-width="1" fill="none"/>
+        <path d="M34 28 H36 V36 H28 V40" stroke="#d4a843" stroke-width="1" fill="none" opacity=".7"/>
+        <path d="M48 28 V36 H44 V40" stroke="#d4a843" stroke-width="1" fill="none" opacity=".7"/>
+        <circle cx="36" cy="36" r="1.5" fill="#d4a843" opacity=".8"/>
+        <circle cx="28" cy="36" r="1.5" fill="#d4a843" opacity=".6"/>
+        <rect x="10" y="28" width="8" height="4" rx="1" fill="#d4a843" opacity=".3"/>
+        <rect x="54" y="28" width="8" height="4" rx="1" fill="#d4a843" opacity=".3"/>
+        <rect x="10" y="40" width="8" height="4" rx="1" fill="#d4a843" opacity=".3"/>
+        <rect x="54" y="40" width="8" height="4" rx="1" fill="#d4a843" opacity=".3"/>
+      </svg>
+      <h1 class="welcome-title">Ask me anything<br><em style="font-style:italic;font-weight:600;color:var(--gold)">about PCB design</em></h1>
+      <p class="welcome-desc">I have full knowledge of connectors, HDI, controlled impedance, DFM, flex circuits, signal integrity, and more based on your documents.</p>
+
+      <div class="suggestions-grid">
+        <div class="suggestion-card" onclick="askSuggestion(this)">
+          <div class="scard-icon">
+            <svg viewBox="0 0 24 24"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg>
+          </div>
+          <span class="scard-text">What types of PCB connectors exist and how do I choose one?</span>
+        </div>
+        <div class="suggestion-card" onclick="askSuggestion(this)">
+          <div class="scard-icon">
+            <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h7"/><circle cx="17" cy="18" r="3"/><path d="M17 15v3l2 1"/></svg>
+          </div>
+          <span class="scard-text">What is controlled impedance and why does it matter?</span>
+        </div>
+        <div class="suggestion-card" onclick="askSuggestion(this)">
+          <div class="scard-icon">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3m-4.2-7.8l-2.1 2.1M6.3 17.7l-2.1 2.1m0-13.6l2.1 2.1m11.4 11.4l2.1 2.1"/></svg>
+          </div>
+          <span class="scard-text">Explain HDI PCB design and microvia technology</span>
+        </div>
+        <div class="suggestion-card" onclick="askSuggestion(this)">
+          <div class="scard-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          </div>
+          <span class="scard-text">What are the key DFM rules for PCB fabrication?</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="input-area">
+  <div class="input-shell">
+    <div class="input-box">
+      <textarea id="msgInput" placeholder="Ask about PCB design, connectors, vias, stack-ups…" rows="1"
+        oninput="autoGrow(this)" onkeydown="handleEnter(event)"></textarea>
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()" disabled>
+        <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+    <div class="input-footer">
+      <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
+      Answers are sourced from your local 1300-page knowledge base
+    </div>
+  </div>
+</div>
+
+<script>
+function autoGrow(element) {
+  element.style.height = "auto";
+  element.style.height = (element.scrollHeight) + "px";
+  
+  const sendBtn = document.getElementById('sendBtn');
+  sendBtn.disabled = element.value.trim().length === 0;
+}
+
+function handleEnter(event) {
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault();
+    if (!document.getElementById('sendBtn').disabled) {
+      sendMessage();
+    }
+  }
+}
+
+function askSuggestion(card) {
+  const text = card.querySelector('.scard-text').innerText;
+  document.getElementById('welcome').style.display = 'none';
+  addMessage(text, 'user');
+  simulateAIResponse(text);
+}
+
+function sendMessage() {
+  const input = document.getElementById('msgInput');
+  const text = input.value.trim();
+  if (!text) return;
+
+  document.getElementById('welcome').style.display = 'none';
+  addMessage(text, 'user');
+  
+  input.value = '';
+  autoGrow(input); 
+  
+  simulateAIResponse(text);
+}
+
+function addMessage(text, sender) {
+  const chatInner = document.getElementById('chatInner');
+  const msgDiv = document.createElement('div');
+  msgDiv.className = `msg ${sender}`;
+  
+  const avatarSVG = sender === 'user' 
+    ? '<svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'
+    : '<svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>';
+
+  msgDiv.innerHTML = `
+    <div class="msg-avatar">${avatarSVG}</div>
+    <div class="msg-bubble">${text}</div>
+  `;
+  
+  chatInner.appendChild(msgDiv);
+  
+  const chatWrap = document.getElementById('chatWrap');
+  chatWrap.scrollTop = chatWrap.scrollHeight;
+}
+
+// This connects your beautiful UI to the Python backend!
+async function simulateAIResponse(userQuery) {
+  const chatInner = document.getElementById('chatInner');
+  
+  // Add a temporary loading bubble
+  const loadingDiv = document.createElement('div');
+  loadingDiv.className = 'msg ai';
+  loadingDiv.id = 'loadingMsg';
+  loadingDiv.innerHTML = `
+    <div class="msg-avatar"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg></div>
+    <div class="msg-bubble" style="opacity: 0.6;"><em>Analyzing PCB Knowledge Base...</em></div>
+  `;
+  chatInner.appendChild(loadingDiv);
+  document.getElementById('chatWrap').scrollTop = document.getElementById('chatWrap').scrollHeight;
+
+  try {
+    // Send the message to your local Python server
+    const response = await fetch('http://localhost:8000/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: userQuery })
+    });
+    
+    const data = await response.json();
+    
+    // Remove the loading bubble and display the real answer
+    document.getElementById('loadingMsg').remove();
+    addMessage(data.answer, 'ai');
+
+  } catch (error) {
+    document.getElementById('loadingMsg').remove();
+    addMessage("⚠️ Connection error. Make sure your Python backend is running in the terminal!", 'ai');
+  }
+}
+</script>
+</body>
+</html>

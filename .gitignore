@@ -1,0 +1,9 @@
+# Ignore the API keys in the Backend folder
+Backend/.env
+
+# Ignore Python cache
+**/__pycache__/
+*.pyc
+
+# Optional: Ignore large PDF files if you don't want them on GitHub
+*.pdf
