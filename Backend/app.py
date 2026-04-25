@@ -22,12 +22,11 @@ app.add_middleware(
 )
 
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
-embedder = SentenceTransformer("all-MiniLM-L6-v2")  # Free, runs locally
+embedder = SentenceTransformer("all-MiniLM-L6-v2")
 
 CHUNKS_FILE = "chunks.json"
 INDEX_FILE = "faiss.index"
 
-# ── Step 1: Extract text from PDF and split into chunks ──
 def extract_chunks(pdf_path, chunk_size=500):
     doc = fitz.open(pdf_path)
     chunks = []
@@ -40,9 +39,7 @@ def extract_chunks(pdf_path, chunk_size=500):
                 chunks.append(chunk)
     return chunks
 
-# ── Step 2: Build or load FAISS index ──
 def build_index(chunks):
-    print("Building index from PDF... this may take a few minutes.")
     embeddings = embedder.encode(chunks, show_progress_bar=True, convert_to_numpy=True)
     embeddings = embeddings.astype("float32")
     index = faiss.IndexFlatL2(embeddings.shape[1])
@@ -50,7 +47,6 @@ def build_index(chunks):
     faiss.write_index(index, INDEX_FILE)
     with open(CHUNKS_FILE, "w") as f:
         json.dump(chunks, f)
-    print("Index built and saved!")
     return index, chunks
 
 def load_index():
@@ -59,37 +55,42 @@ def load_index():
         chunks = json.load(f)
     return index, chunks
 
-# ── Step 3: Search for relevant chunks ──
 def search(query, index, chunks, top_k=4):
     query_vec = embedder.encode([query], convert_to_numpy=True).astype("float32")
     _, indices = index.search(query_vec, top_k)
     return [chunks[i] for i in indices[0] if i < len(chunks)]
 
-# ── Step 4: Ask Groq with context ──
 def ask(query, context_chunks):
     context = "\n\n".join(context_chunks)
+    
+    # SYSTEM PROMPT FOR CLAUDE-STYLE FORMATTING
+    system_prompt = (
+        "You are a professional PCB Assistant. Answer based only on the provided book content. "
+        "Structure your response strictly by following these rules:\n"
+        "1. Use **Bold Headings** to separate different parts of your answer.\n"
+        "2. Use bullet points (*) or numbered lists for steps and details.\n"
+        "3. Use arrows (->) to show workflows or logical connections.\n"
+        "4. Use **bold text** for important technical terms.\n"
+        "5. Ensure the answer is organized, professional, and easy to read."
+    )
+
     response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",  # Updated model
+        model="llama-3.3-70b-versatile",
         messages=[
-            {"role": "system", "content": "You are a helpful assistant. Answer based only on the provided book content."},
+            {"role": "system", "content": system_prompt},
             {"role": "user", "content": f"Book content:\n{context}\n\nQuestion: {query}"}
         ]
     )
     return response.choices[0].message.content
 
-# ── Startup: load or build index ──
-print("Initializing...")
+# Startup Logic
 if os.path.exists(INDEX_FILE) and os.path.exists(CHUNKS_FILE):
-    print("Saved index found! Loading...")
     index, chunks = load_index()
-    print("Ready!")
 else:
-    print("No index found. Reading PDF...")
-    chunks = extract_chunks("../ilovepdf_merged.pdf")
+    pdf_path = "ilovepdf_merged.pdf" if os.path.exists("ilovepdf_merged.pdf") else "../ilovepdf_merged.pdf"
+    chunks = extract_chunks(pdf_path)
     index, chunks = build_index(chunks)
-    print("Ready!")
 
-# ── API endpoint ──
 class Query(BaseModel):
     text: str
 
