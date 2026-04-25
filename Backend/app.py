@@ -2,6 +2,7 @@ import os
 import json
 import math
 import fitz  # PyMuPDF
+import requests
 from groq import Groq
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -26,10 +27,33 @@ client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CHUNKS_FILE = os.path.join(BASE_DIR, "chunks.json")
-PDF_FILE = os.path.join(BASE_DIR, "..", "ilovepdf_merged.pdf")
+PDF_FILE = os.path.join(BASE_DIR, "ilovepdf_merged.pdf")
 FRONTEND_DIR = os.path.join(BASE_DIR, "..", "FrontEnd")
 
-# ── Extract text from PDF with small overlapping chunks ──
+GDRIVE_FILE_ID = "1PVNpBEhBbHxSEvgRlyLmMlc0u_zUEqnr"
+
+# ── Download PDF from Google Drive if not present ──
+def download_pdf():
+    if os.path.exists(PDF_FILE):
+        print("PDF already exists, skipping download.")
+        return
+    print("Downloading PDF from Google Drive...")
+    url = f"https://drive.google.com/uc?export=download&id={GDRIVE_FILE_ID}"
+    session = requests.Session()
+    response = session.get(url, stream=True)
+    # Handle large file warning page
+    for key, value in response.cookies.items():
+        if key.startswith("download_warning"):
+            url = f"https://drive.google.com/uc?export=download&id={GDRIVE_FILE_ID}&confirm={value}"
+            response = session.get(url, stream=True)
+            break
+    with open(PDF_FILE, "wb") as f:
+        for chunk in response.iter_content(chunk_size=32768):
+            if chunk:
+                f.write(chunk)
+    print(f"PDF downloaded successfully!")
+
+# ── Extract text from PDF with overlapping chunks ──
 def extract_chunks(pdf_path, chunk_size=200, overlap=50):
     doc = fitz.open(pdf_path)
     chunks = []
@@ -46,7 +70,7 @@ def extract_chunks(pdf_path, chunk_size=200, overlap=50):
                     "text": chunk,
                     "page": page_num + 1
                 })
-            i += chunk_size - overlap  # overlap for continuity
+            i += chunk_size - overlap
     return chunks
 
 # ── BM25 Search ──
@@ -62,7 +86,6 @@ class BM25:
         self._build()
 
     def _tokenize(self, text):
-        # remove common words for better matching
         stopwords = {"the","a","an","is","in","it","of","and","or","to","for","on","with","that","this","are","was","be","as","at","by","from","have","has"}
         words = text.lower().split()
         return [w for w in words if w not in stopwords and len(w) > 2]
@@ -98,31 +121,21 @@ class BM25:
         scores = [(i, self.score(query, i)) for i in range(self.N)]
         scores.sort(key=lambda x: x[1], reverse=True)
         results = []
-        seen_pages = set()
         for i, s in scores:
             if s < min_score:
                 break
             results.append(self.chunks[i])
-            seen_pages.add(self.chunks[i]["page"])
             if len(results) >= top_k:
                 break
         return results
 
-# ── Ask Groq with all relevant context ──
+# ── Ask Groq ──
 def ask(query, context_chunks):
     if not context_chunks:
         return "I couldn't find relevant information in the book for your question."
-
-    # Sort by page number for logical reading order
     context_chunks_sorted = sorted(context_chunks, key=lambda x: x["page"])
-    
-    # Build context with page references
-    context_parts = []
-    for c in context_chunks_sorted:
-        context_parts.append(f"[Page {c['page']}]: {c['text']}")
-    
+    context_parts = [f"[Page {c['page']}]: {c['text']}" for c in context_chunks_sorted]
     context = "\n\n".join(context_parts)
-
     response = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
         max_tokens=2048,
@@ -131,16 +144,15 @@ def ask(query, context_chunks):
                 "role": "system",
                 "content": (
                     "You are a detailed PCB technical assistant. "
-                    "Your job is to give COMPLETE and THOROUGH answers based on the provided book content. "
-                    "Include ALL relevant details, definitions, specifications, and explanations found in the content. "
+                    "Give COMPLETE and THOROUGH answers based on the provided book content. "
+                    "Include ALL relevant details, definitions, specifications, and explanations. "
                     "Mention page numbers when referencing specific information. "
-                    "Do not summarize or skip any relevant detail. "
-                    "If the content covers multiple aspects of the question, explain all of them."
+                    "Do not summarize or skip any relevant detail."
                 )
             },
             {
                 "role": "user",
-                "content": f"Book content:\n{context}\n\nQuestion: {query}\n\nProvide a complete and detailed answer using all relevant information from the book content above."
+                "content": f"Book content:\n{context}\n\nQuestion: {query}\n\nProvide a complete and detailed answer."
             }
         ]
     )
@@ -148,6 +160,8 @@ def ask(query, context_chunks):
 
 # ── Startup ──
 print("Initializing...")
+download_pdf()
+
 if os.path.exists(CHUNKS_FILE):
     print("Saved chunks found! Loading...")
     with open(CHUNKS_FILE, "r") as f:
