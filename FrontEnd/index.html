@@ -392,6 +392,77 @@ textarea::placeholder{
 }
 
 .input-footer svg{width:10px;height:10px;stroke:var(--text3);fill:none;stroke-width:1.5;opacity:.6}
+
+/* LAYOUT */
+.main-layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  z-index: 5;
+}
+
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  position: relative;
+  min-width: 0;
+}
+
+/* SIDEBAR */
+.sidebar {
+  width: 260px;
+  background: var(--surface);
+  border-right: 1px solid var(--border2);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.sidebar-header {
+  padding: 20px 24px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text2);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+
+.history-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.history-list::-webkit-scrollbar { width: 3px; }
+.history-list::-webkit-scrollbar-track { background: transparent; }
+.history-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+.history-item {
+  padding: 12px 14px;
+  background: transparent;
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--text2);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 0.2s, color 0.2s;
+  border: 1px solid transparent;
+}
+
+.history-item:hover {
+  background: var(--surface2);
+  color: var(--text);
+  border-color: var(--border);
+}
 </style>
 </head>
 <body>
@@ -425,69 +496,79 @@ textarea::placeholder{
   </div>
 </header>
 
-<div class="chat-wrap" id="chatWrap">
-  <div class="chat-inner" id="chatInner">
-    <div class="welcome" id="welcome">
-      <svg class="welcome-icon" viewBox="0 0 72 72" fill="none">
-        <rect x="10" y="10" width="52" height="52" rx="8" stroke="#d4a843" stroke-width="1" fill="none" opacity=".3"/>
-        <rect x="18" y="18" width="36" height="36" rx="5" stroke="#d4a843" stroke-width="1" fill="none" opacity=".5"/>
-        <rect x="24" y="24" width="10" height="8" rx="2" stroke="#d4a843" stroke-width="1" fill="none"/>
-        <rect x="38" y="24" width="10" height="8" rx="2" stroke="#d4a843" stroke-width="1" fill="none"/>
-        <rect x="24" y="40" width="24" height="8" rx="2" stroke="#d4a843" stroke-width="1" fill="none"/>
-        <path d="M34 28 H36 V36 H28 V40" stroke="#d4a843" stroke-width="1" fill="none" opacity=".7"/>
-        <path d="M48 28 V36 H44 V40" stroke="#d4a843" stroke-width="1" fill="none" opacity=".7"/>
-        <circle cx="36" cy="36" r="1.5" fill="#d4a843" opacity=".8"/>
-        <circle cx="28" cy="36" r="1.5" fill="#d4a843" opacity=".6"/>
-        <rect x="10" y="28" width="8" height="4" rx="1" fill="#d4a843" opacity=".3"/>
-        <rect x="54" y="28" width="8" height="4" rx="1" fill="#d4a843" opacity=".3"/>
-        <rect x="10" y="40" width="8" height="4" rx="1" fill="#d4a843" opacity=".3"/>
-        <rect x="54" y="40" width="8" height="4" rx="1" fill="#d4a843" opacity=".3"/>
-      </svg>
-      <h1 class="welcome-title">Ask me anything<br><em style="font-style:italic;font-weight:600;color:var(--gold)">about PCB design</em></h1>
-      <p class="welcome-desc">I have full knowledge of connectors, HDI, controlled impedance, DFM, flex circuits, signal integrity, and more based on your documents.</p>
+<div class="main-layout">
+  <aside class="sidebar">
+    <div class="sidebar-header">Chat History</div>
+    <div class="history-list" id="historyList">
+    </div>
+  </aside>
 
-      <div class="suggestions-grid">
-        <div class="suggestion-card" onclick="askSuggestion(this)">
-          <div class="scard-icon">
-            <svg viewBox="0 0 24 24"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg>
+  <div class="chat-container">
+    <div class="chat-wrap" id="chatWrap">
+      <div class="chat-inner" id="chatInner">
+        <div class="welcome" id="welcome">
+          <svg class="welcome-icon" viewBox="0 0 72 72" fill="none">
+            <rect x="10" y="10" width="52" height="52" rx="8" stroke="#d4a843" stroke-width="1" fill="none" opacity=".3"/>
+            <rect x="18" y="18" width="36" height="36" rx="5" stroke="#d4a843" stroke-width="1" fill="none" opacity=".5"/>
+            <rect x="24" y="24" width="10" height="8" rx="2" stroke="#d4a843" stroke-width="1" fill="none"/>
+            <rect x="38" y="24" width="10" height="8" rx="2" stroke="#d4a843" stroke-width="1" fill="none"/>
+            <rect x="24" y="40" width="24" height="8" rx="2" stroke="#d4a843" stroke-width="1" fill="none"/>
+            <path d="M34 28 H36 V36 H28 V40" stroke="#d4a843" stroke-width="1" fill="none" opacity=".7"/>
+            <path d="M48 28 V36 H44 V40" stroke="#d4a843" stroke-width="1" fill="none" opacity=".7"/>
+            <circle cx="36" cy="36" r="1.5" fill="#d4a843" opacity=".8"/>
+            <circle cx="28" cy="36" r="1.5" fill="#d4a843" opacity=".6"/>
+            <rect x="10" y="28" width="8" height="4" rx="1" fill="#d4a843" opacity=".3"/>
+            <rect x="54" y="28" width="8" height="4" rx="1" fill="#d4a843" opacity=".3"/>
+            <rect x="10" y="40" width="8" height="4" rx="1" fill="#d4a843" opacity=".3"/>
+            <rect x="54" y="40" width="8" height="4" rx="1" fill="#d4a843" opacity=".3"/>
+          </svg>
+          <h1 class="welcome-title">Ask me anything<br><em style="font-style:italic;font-weight:600;color:var(--gold)">about PCB design</em></h1>
+          <p class="welcome-desc">I have full knowledge of connectors, HDI, controlled impedance, DFM, flex circuits, signal integrity, and more based on your documents.</p>
+
+          <div class="suggestions-grid">
+            <div class="suggestion-card" onclick="askSuggestion(this)">
+              <div class="scard-icon">
+                <svg viewBox="0 0 24 24"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg>
+              </div>
+              <span class="scard-text">What types of PCB connectors exist and how do I choose one?</span>
+            </div>
+            <div class="suggestion-card" onclick="askSuggestion(this)">
+              <div class="scard-icon">
+                <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h7"/><circle cx="17" cy="18" r="3"/><path d="M17 15v3l2 1"/></svg>
+              </div>
+              <span class="scard-text">What is controlled impedance and why does it matter?</span>
+            </div>
+            <div class="suggestion-card" onclick="askSuggestion(this)">
+              <div class="scard-icon">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3m-4.2-7.8l-2.1 2.1M6.3 17.7l-2.1 2.1m0-13.6l2.1 2.1m11.4 11.4l2.1 2.1"/></svg>
+              </div>
+              <span class="scard-text">Explain HDI PCB design and microvia technology</span>
+            </div>
+            <div class="suggestion-card" onclick="askSuggestion(this)">
+              <div class="scard-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              </div>
+              <span class="scard-text">What are the key DFM rules for PCB fabrication?</span>
+            </div>
           </div>
-          <span class="scard-text">What types of PCB connectors exist and how do I choose one?</span>
-        </div>
-        <div class="suggestion-card" onclick="askSuggestion(this)">
-          <div class="scard-icon">
-            <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h7"/><circle cx="17" cy="18" r="3"/><path d="M17 15v3l2 1"/></svg>
-          </div>
-          <span class="scard-text">What is controlled impedance and why does it matter?</span>
-        </div>
-        <div class="suggestion-card" onclick="askSuggestion(this)">
-          <div class="scard-icon">
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3m-4.2-7.8l-2.1 2.1M6.3 17.7l-2.1 2.1m0-13.6l2.1 2.1m11.4 11.4l2.1 2.1"/></svg>
-          </div>
-          <span class="scard-text">Explain HDI PCB design and microvia technology</span>
-        </div>
-        <div class="suggestion-card" onclick="askSuggestion(this)">
-          <div class="scard-icon">
-            <svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-          </div>
-          <span class="scard-text">What are the key DFM rules for PCB fabrication?</span>
         </div>
       </div>
     </div>
-  </div>
-</div>
 
-<div class="input-area">
-  <div class="input-shell">
-    <div class="input-box">
-      <textarea id="msgInput" placeholder="Ask about PCB design, connectors, vias, stack-ups…" rows="1"
-        oninput="autoGrow(this)" onkeydown="handleEnter(event)"></textarea>
-      <button class="send-btn" id="sendBtn" onclick="sendMessage()" disabled>
-        <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-      </button>
-    </div>
-    <div class="input-footer">
-      <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
-      Answers are sourced from your local 1300-page knowledge base
+    <div class="input-area">
+      <div class="input-shell">
+        <div class="input-box">
+          <textarea id="msgInput" placeholder="Ask about PCB design, connectors, vias, stack-ups…" rows="1"
+            oninput="autoGrow(this)" onkeydown="handleEnter(event)"></textarea>
+          <button class="send-btn" id="sendBtn" onclick="sendMessage()" disabled>
+            <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+        <div class="input-footer">
+          <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
+          Answers are sourced from your local 1300-page knowledge base
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -510,9 +591,24 @@ function handleEnter(event) {
   }
 }
 
+function addToHistory(text) {
+  const list = document.getElementById('historyList');
+  const item = document.createElement('div');
+  item.className = 'history-item';
+  item.innerText = text;
+  item.onclick = () => {
+    const input = document.getElementById('msgInput');
+    input.value = text;
+    autoGrow(input);
+    input.focus();
+  };
+  list.prepend(item);
+}
+
 function askSuggestion(card) {
   const text = card.querySelector('.scard-text').innerText;
   document.getElementById('welcome').style.display = 'none';
+  addToHistory(text);
   addMessage(text, 'user');
   simulateAIResponse(text);
 }
@@ -523,6 +619,7 @@ function sendMessage() {
   if (!text) return;
 
   document.getElementById('welcome').style.display = 'none';
+  addToHistory(text);
   addMessage(text, 'user');
   
   input.value = '';
@@ -541,6 +638,7 @@ function addMessage(text, sender) {
     ? '<svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'
     : '<svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>';
 
+  marked.setOptions({ breaks: true, gfm: true });
   // Use marked.parse for AI messages to turn ** into bold and * into bullets
   const formattedText = sender === 'ai' ? marked.parse(text) : text;
 
