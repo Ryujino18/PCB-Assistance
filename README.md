@@ -211,3 +211,26 @@ If you prefer using Docker:
 | `groq.APIConnectionError` or `GroqError` | Invalid or missing `GROQ_API_KEY` | Ensure `Backend/.env` exists and contains a valid `GROQ_API_KEY=gsk_...`. |
 | `ModuleNotFoundError: No module named 'Backend'` | Uvicorn launched inside `Backend/` folder | Run `cd ..` to return to the project root and execute `uvicorn Backend.app:app --reload --port 8000`. |
 | `FileNotFoundError: chunks.json` | `chunks.json` missing | Run `python Backend/build_chunks.py` to regenerate the chunk index from the PDF. |
+
+---
+
+## 💼 Finance RAG Module (Assignment Alternative)
+
+This repository also includes a separate, fully compliant assignment submission located in the `finance-rag/` directory. It uses Streamlit, LangChain, ChromaDB, and Groq LLM to strictly adhere to the technical requirements for processing financial reports.
+
+To run the standalone Finance RAG application:
+
+1. Navigate to the directory:
+   ```bash
+   cd finance-rag
+   ```
+2. Install the specific requirements:
+   ```bash
+   pip install -r requirements.txt
+   ```
+3. Run the Streamlit app:
+   ```bash
+   streamlit run app.py
+   ```
+   
+> **Note**: For full documentation on the Finance RAG module, please read [finance-rag/README.md](finance-rag/README.md).
