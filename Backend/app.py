@@ -2,13 +2,14 @@ import os
 import json
 import math
 from groq import Groq
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from collections import defaultdict
+import pymupdf as fitz
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 load_dotenv(os.path.join(BASE_DIR, ".env"))
@@ -109,3 +110,30 @@ async def chat(query: Query):
     results = bm25.search(query.text)
     answer = ask(query.text, results)
     return {"answer": answer}
+
+
+@app.post("/upload")
+async def upload_pdf(file: UploadFile = File(...)):
+    global chunks, bm25
+    if not file.filename.lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Only PDF files are supported.")
+    contents = await file.read()
+    doc = fitz.open(stream=contents, filetype="pdf")
+    new_chunks = []
+    for page_num, page in enumerate(doc):
+        text = page.get_text().strip()
+        if not text:
+            continue
+        words = text.split()
+        for i in range(0, len(words), 150):
+            chunk_text = " ".join(words[i:i+200])
+            if chunk_text:
+                new_chunks.append({"text": chunk_text, "page": page_num + 1})
+    doc.close()
+    if not new_chunks:
+        raise HTTPException(status_code=422, detail="No readable text found in the uploaded PDF.")
+    chunks = new_chunks
+    bm25 = BM25(chunks)
+    with open(CHUNKS_FILE, "w") as f:
+        json.dump(chunks, f)
+    return {"message": f"Successfully processed '{file.filename}' with {len(chunks)} chunks."}
