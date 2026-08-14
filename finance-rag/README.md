@@ -12,7 +12,7 @@ The system ensures **strict knowledge-grounded answering** by returning informat
 - **Advanced Chunking**: Documents are processed using `RecursiveCharacterTextSplitter` with 1000 character chunks and 150 character overlaps.
 - **Local Embeddings**: Uses HuggingFace's `all-MiniLM-L6-v2` embedding model (completely free, replacing OpenAI's paid `text-embedding-3-small`).
 - **Persistent Vector Database**: Stores vector embeddings in `ChromaDB` inside the `chroma_db/` folder, ensuring indexed documents remain searchable after application restarts.
-- **Powered by Groq LLM**: Uses `llama-3.3-70b-versatile` via the Groq API (as a free alternative to GPT-4o).
+- **Powered by OpenAI LLM**: Uses `gpt-4o` via the OpenAI API.
 - **Source Citation**: Every answer includes the exact file name and page number as required.
 - **Interactive Interface**: Sleek Streamlit user interface (`app.py`).
 
@@ -24,11 +24,11 @@ The system ensures **strict knowledge-grounded answering** by returning informat
 finance-rag/
 ├── app.py              # Streamlit interface (Upload, Index, Chat)
 ├── ingest.py           # Loads PDFs, chunks text, embeds, stores in ChromaDB
-├── rag.py              # Retrieves context from ChromaDB + Prompts Groq LLM
+├── rag.py              # Retrieves context from ChromaDB + Prompts OpenAI LLM
 ├── data/               # Directory where uploaded PDFs are stored
 ├── chroma_db/          # Persisted Chroma vector database
 ├── requirements.txt    # Python dependencies
-├── .env                # API Keys (GROQ_API_KEY)
+├── .env                # API Keys (OPENAI_API_KEY)
 ├── .env.example        # Example environment template
 ├── .gitignore          # Git ignore rules
 └── README.md           # This documentation file
@@ -53,9 +53,9 @@ pip install -r requirements.txt
 ```
 
 ### Step 3: Configure Environment Variables
-Make sure your `.env` file exists in the `finance-rag` folder and contains your Groq API key:
+Make sure your `.env` file exists in the `finance-rag` folder and contains your OpenAI API key:
 ```env
-GROQ_API_KEY=your_key_here
+OPENAI_API_KEY=your_key_here
 ```
 
 ### Step 4: Run the Streamlit App

@@ -9,7 +9,7 @@ DATA_DIR = "data"
 
 # Setup Streamlit Interface
 st.set_page_config(page_title="Finance RAG System", layout="wide")
-st.title("Finance RAG System (Groq Edition)")
+st.title("Finance RAG System (OpenAI Edition)")
 
 os.makedirs(DATA_DIR, exist_ok=True)
 

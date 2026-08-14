@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
-from langchain_groq import ChatGroq
+from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 
 load_dotenv()
@@ -35,8 +35,8 @@ def get_answer(query):
     
     context = "\n\n".join(context_blocks)
     
-    # 3. Use Answering Model (Groq Llama 3 instead of GPT-4o)
-    llm = ChatGroq(model_name="llama-3.3-70b-versatile", temperature=0.1)
+    # 3. Use Answering Model (OpenAI GPT-4o)
+    llm = ChatOpenAI(model_name="gpt-4o", temperature=0.1)
     
     # 4. Prompt with strict instructions for honest refusal
     prompt = ChatPromptTemplate.from_messages([
